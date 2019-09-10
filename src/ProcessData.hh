@@ -17,8 +17,6 @@
  * along with runsolver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 #ifndef _ProcessData_hh_
 #define _ProcessData_hh_
 
@@ -28,8 +26,7 @@ using namespace std;
 /**
  * The information we keep on a process
  */
-class ProcessData
-{
+class ProcessData {
 private:
   bool valid; // did we collect meaningful data?
 
@@ -38,446 +35,364 @@ private:
   uid_t uid;
   gid_t gid;
 
-  pid_t pid,tid,ppid,pgrp;
-  unsigned long int utime,stime,cutime,cstime;
+  pid_t pid, tid, ppid, pgrp;
+  unsigned long int utime, stime, cutime, cstime;
   unsigned long int starttime;
   unsigned long int vsize;
 
-  unsigned long int rss,swap; // in kB, see /proc/[pid]/status
+  unsigned long int rss, swap; // in kB, see /proc/[pid]/status
 
   vector<pid_t> children;
 
-  char statLine[1024]; // ???
+  char statLine[1024];  // ???
   char statmLine[1024]; // ???
 
   vector<unsigned short int> allocatedCores;
 
   bool selected; // a flag to select/unselect processes
 
-  inline void init()
-  {
-    valid=false;
-    pid=-1;
-    tid=-1;
-    ppid=-1;
-    utime=stime=cutime=cstime=0;
-    vsize=0;
+  inline void init() {
+    valid = false;
+    pid = -1;
+    tid = -1;
+    ppid = -1;
+    utime = stime = cutime = cstime = 0;
+    vsize = 0;
   }
 
 public:
-  ProcessData() {init();}
+  ProcessData() { init(); }
 
-  ProcessData(pid_t pid, pid_t tid=0)
-  {
+  ProcessData(pid_t pid, pid_t tid = 0) {
     init();
-    read(pid,tid);
+    read(pid, tid);
   }
 
-  ProcessData(const ProcessData &pd)
-  {
-    valid=false;
+  ProcessData(const ProcessData &pd) {
+    valid = false;
 
-    uid=pd.uid;
-    gid=pd.gid;
+    uid = pd.uid;
+    gid = pd.gid;
 
-    pid=pd.pid;
-    tid=pd.tid;
-    ppid=pd.ppid;
-    pgrp=pd.pgrp;
-    utime=pd.utime;
-    stime=pd.stime;
-    cutime=pd.cutime;
-    cstime=pd.cstime;
-    starttime=pd.starttime;
-    vsize=pd.vsize;
+    pid = pd.pid;
+    tid = pd.tid;
+    ppid = pd.ppid;
+    pgrp = pd.pgrp;
+    utime = pd.utime;
+    stime = pd.stime;
+    cutime = pd.cutime;
+    cstime = pd.cstime;
+    starttime = pd.starttime;
+    vsize = pd.vsize;
 
-    statLine[0]=0;
-    statmLine[0]=0;
+    statLine[0] = 0;
+    statmLine[0] = 0;
 
-    for(size_t i=0;i<pd.children.size();++i)
+    for (size_t i = 0; i < pd.children.size(); ++i)
       children.push_back(pd.children[i]);
   }
 
-  ~ProcessData()
-  {
-  }
+  ~ProcessData() {}
 
   /*
    * return false iff the process doesn't exit any more or we failed
    * to read the data
    */
-  bool read(pid_t pid, pid_t tid=0)
-  {
+  bool read(pid_t pid, pid_t tid = 0) {
     char fileName[64]; // ???
     FILE *file;
     int nbFields;
 
-    this->pid=pid;
-    this->tid=tid;
+    this->pid = pid;
+    this->tid = tid;
 
-    valid=false;
+    valid = false;
 
     if (tid)
-      snprintf(fileName,sizeof(fileName),"/proc/%d/task/%d/stat",pid,tid);
+      snprintf(fileName, sizeof(fileName), "/proc/%d/task/%d/stat", pid, tid);
     else
-      snprintf(fileName,sizeof(fileName),"/proc/%d/stat",pid);
-    
-    if ((file=fopen(fileName,"r"))!=NULL)
-    {
+      snprintf(fileName, sizeof(fileName), "/proc/%d/stat", pid);
+
+    if ((file = fopen(fileName, "r")) != NULL) {
       struct stat info;
 
-      fstat(fileno(file),&info);
+      fstat(fileno(file), &info);
 
-      uid=info.st_uid;
-      gid=info.st_gid;
+      uid = info.st_uid;
+      gid = info.st_gid;
 
-      if (fgets(statLine,sizeof(statLine),file)==NULL)
-      {
+      if (fgets(statLine, sizeof(statLine), file) == NULL) {
 #ifdef debug
-	perror("failed to read stat file");
+        perror("failed to read stat file");
 #endif
 
-	strcpy(statLine,"-- couldn't read stat file --");
-	fclose(file);
+        strcpy(statLine, "-- couldn't read stat file --");
+        fclose(file);
 
-	return valid=false;
+        return valid = false;
       }
-      
+
       fclose(file);
-    }
-    else
-    {
+    } else {
 #ifdef debug
       perror("failed to open stat file");
 #endif
 
-      strcpy(statLine,"-- couldn't open stat file --");
+      strcpy(statLine, "-- couldn't open stat file --");
 
-      return valid=false;
+      return valid = false;
     }
 
-    nbFields=sscanf(statLine,
-#if WSIZE==32
-		    "%*d "
-		    "%*s "
-		    "%*c "
-		    "%d %d %*d %*d %*d "
-		    "%*u %*u %*u %*u %*u " // lu lu lu lu lu
-		    "%Lu %Lu %Lu %Lu "  /* utime stime cutime cstime */
-		    "%*d %*d " // ld ld
-		    "%*d "
-		    "%*d " // ld
-		    "%Lu "  /* start_time */
-		    "%lu ",
+    nbFields = sscanf(statLine,
+#if WSIZE == 32
+                      "%*d "
+                      "%*s "
+                      "%*c "
+                      "%d %d %*d %*d %*d "
+                      "%*u %*u %*u %*u %*u " // lu lu lu lu lu
+                      "%Lu %Lu %Lu %Lu "     /* utime stime cutime cstime */
+                      "%*d %*d "             // ld ld
+                      "%*d "
+                      "%*d " // ld
+                      "%Lu " /* start_time */
+                      "%lu ",
 #else
-		    "%*d "
-		    "%*s "
-		    "%*c "
-		    "%d %d %*d %*d %*d "
-		    "%*u %*u %*u %*u %*u " // lu lu lu lu lu
-		    "%lu %lu %lu %lu "  /* utime stime cutime cstime */
-		    "%*d %*d " // ld ld
-		    "%*d "
-		    "%*d " // ld
-		    "%lu "  /* start_time */
-		    "%lu ",
+                      "%*d "
+                      "%*s "
+                      "%*c "
+                      "%d %d %*d %*d %*d "
+                      "%*u %*u %*u %*u %*u " // lu lu lu lu lu
+                      "%lu %lu %lu %lu "     /* utime stime cutime cstime */
+                      "%*d %*d "             // ld ld
+                      "%*d "
+                      "%*d " // ld
+                      "%lu " /* start_time */
+                      "%lu ",
 #endif
-		    &ppid,&pgrp,
-		    &utime, &stime, &cutime, &cstime,
-		    &starttime,
-		    &vsize
-		    );
+                      &ppid, &pgrp, &utime, &stime, &cutime, &cstime,
+                      &starttime, &vsize);
 
-    if(nbFields!=8)
-    {
+    if (nbFields != 8) {
 #ifdef debug
       cout << "FAILED TO READ EACH FIELD (got " << nbFields << " fields)\n";
 #endif
 
-      return valid=false;      
+      return valid = false;
     }
-    
-    if (!tid)
-    {
-      snprintf(fileName,sizeof(fileName),"/proc/%d/statm",pid);
 
-      if ((file=fopen(fileName,"r"))!=NULL)
-      {
-	if (fgets(statmLine,sizeof(statmLine),file)==NULL)
-	{
+    if (!tid) {
+      snprintf(fileName, sizeof(fileName), "/proc/%d/statm", pid);
+
+      if ((file = fopen(fileName, "r")) != NULL) {
+        if (fgets(statmLine, sizeof(statmLine), file) == NULL) {
 #ifdef debug
-	  perror("failed to read statm file");
+          perror("failed to read statm file");
 #endif
 
-	  strcpy(statmLine,"-- couldn't read statm file --");
-	  fclose(file);
+          strcpy(statmLine, "-- couldn't read statm file --");
+          fclose(file);
 
-	  return valid=false;
-	}
+          return valid = false;
+        }
 
-	fclose(file);
-      }
-      else
-      {
+        fclose(file);
+      } else {
 #ifdef debug
-	perror("failed to open statm file");
+        perror("failed to open statm file");
 #endif
 
-	strcpy(statmLine,"-- couldn't open statm file --");
+        strcpy(statmLine, "-- couldn't open statm file --");
       }
     }
 
-    if (!tid)
-    {
+    if (!tid) {
       // read /proc/%d/status
-      snprintf(fileName,sizeof(fileName),"/proc/%d/status",pid);
+      snprintf(fileName, sizeof(fileName), "/proc/%d/status", pid);
       ifstream in(fileName);
       string tmp;
-      int nbFieldsToRead=2;
-      
-      while(in.good() && nbFieldsToRead>0)
-      {
+      int nbFieldsToRead = 2;
+
+      while (in.good() && nbFieldsToRead > 0) {
         in >> tmp;
-        if(tmp=="VmRSS:")
-        {
+        if (tmp == "VmRSS:") {
           in >> rss;
           --nbFieldsToRead;
+        } else if (tmp == "VmSwap:") {
+          in >> swap;
+          --nbFieldsToRead;
         }
-        else
-          if(tmp=="VmSwap:")
-          {
-            in >> swap;
-            --nbFieldsToRead;
-          }
-        getline(in,tmp);
+        getline(in, tmp);
       }
-      
-      if(nbFieldsToRead!=0)
-      {
+
+      if (nbFieldsToRead != 0) {
 #ifdef debug
         cout << "FAILED TO READ EACH FIELD in /proc/" << pid << "/status\n";
 #endif
 
-        return valid=false;      
+        return valid = false;
       }
     }
 
     getAllocatedCores();
 
-    return valid=true;
+    return valid = true;
   }
 
   /**
    * update data on this process
    *
    * return false iff the process doesn't exit any more
-   */ 
-  bool update()
-  {
-    return read(pid,tid);
-  }
+   */
+  bool update() { return read(pid, tid); }
 
   /**
    * do we have valid data?
    */
-  bool isValid() const {return valid;}
-  
+  bool isValid() const { return valid; }
+
   /**
    * return the % of CPU used by this process (and its children when
    * withChildren is true). The result is between 0 and 1
    */
-  float percentageCPU(float uptime, bool withChildren=false) const
-  {
-    float cputime=stime+utime;
+  float percentageCPU(float uptime, bool withChildren = false) const {
+    float cputime = stime + utime;
 
     if (withChildren)
-      cputime+=cstime+cutime;
+      cputime += cstime + cutime;
 
-    cputime/=clockTicksPerSecond;
+    cputime /= clockTicksPerSecond;
 
-    float wctime=uptime-static_cast<float>(starttime)/clockTicksPerSecond;
+    float wctime = uptime - static_cast<float>(starttime) / clockTicksPerSecond;
 
-    if (wctime==0)
+    if (wctime == 0)
       return 0;
     else
-      return cputime/wctime;
+      return cputime / wctime;
   }
 
+  bool isTask() const { return tid != 0; }
 
-  bool isTask() const
-  {
-    return tid!=0;
-  }
+  const vector<pid_t> &getChildren() const { return children; }
 
+  void addChild(pid_t child) { children.push_back(child); }
 
-  const vector<pid_t> &getChildren() const
-  {
-    return children;
-  }
-  
-  void addChild(pid_t child)
-  {
-    children.push_back(child);
-  }
+  int getNbChildren() const { return children.size(); }
 
-  int getNbChildren() const
-  {
-    return children.size();
-  }
+  pid_t getPIDChild(int i) const { return children[i]; }
 
-  pid_t getPIDChild(int i) const
-  {
-    return children[i];
-  }
+  pid_t getppid() const { return ppid; }
 
-  pid_t getppid() const
-  {
-    return ppid;
-  }
+  pid_t getProcessGroupId() const { return pgrp; }
 
-  pid_t getProcessGroupId() const
-  {
-    return pgrp;
-  }
+  uid_t getUid() const { return uid; }
 
-  uid_t getUid() const
-  {
-    return uid;
-  }
+  void select() { selected = true; }
 
-  void select()
-  {
-    selected=true;
-  }
+  void unselect() { selected = false; }
 
-  void unselect()
-  {
-    selected=false;
-  }
+  bool isSelected() const { return selected; }
 
-  bool isSelected() const
-  {
-    return selected;
-  }
-
-  float getOverallCPUTime() const
-  {
+  float getOverallCPUTime() const {
     // note that cstime and cutime (child system and user time) are
     // only updated by the wait call in the parent (this is to say,
     // only once the child has terminated). Therefore, we can't rely
     // on these variables to limit the global cpu use of a process
     // and its children
 
-    return (stime+(float)utime
-	    +cstime+(float)cutime
-	    )/clockTicksPerSecond;
+    return (stime + (float)utime + cstime + (float)cutime) /
+           clockTicksPerSecond;
   }
 
-  float getOverallUserTime() const
-  {
+  float getOverallUserTime() const {
     // note that cstime and cutime (child system and user time) are
     // only updated by the wait call in the parent (this is to say,
     // only once the child has terminated). Therefore, we can't rely
     // on these variables to limit the global cpu use of a process
     // and its children
 
-    return (utime+(float)cutime)/clockTicksPerSecond;
+    return (utime + (float)cutime) / clockTicksPerSecond;
   }
 
-  float getOverallSystemTime() const
-  {
+  float getOverallSystemTime() const {
     // note that cstime and cutime (child system and user time) are
     // only updated by the wait call in the parent (this is to say,
     // only once the child has terminated). Therefore, we can't rely
     // on these variables to limit the global cpu use of a process
     // and its children
 
-    return (stime+(float)cstime)/clockTicksPerSecond;
+    return (stime + (float)cstime) / clockTicksPerSecond;
   }
 
   /**
    * return the current vsize in kB
    */
-  long getVSize() const
-  {
-    return vsize/1024;
-  }
+  long getVSize() const { return vsize / 1024; }
 
   /**
    * return the current memory consumption in kB
    */
-  long getMemory() const
-  {
-    return rss+swap;
-  }
+  long getMemory() const { return rss + swap; }
 
   /**
    * get the list of cores allocated to this process
    */
-  void getAllocatedCores()
-  {
-    //return; // ???
-    
+  void getAllocatedCores() {
+    // return; // ???
+
     cpu_set_t mask;
     allocatedCores.clear();
-  
-    sched_getaffinity(pid,sizeof(cpu_set_t),&mask);
+
+    sched_getaffinity(pid, sizeof(cpu_set_t), &mask);
 
 #warning "don't watse time converting to a vector, just keep the cpu_set_t"
-    for(int i=0;i<CPU_SETSIZE;++i)
-      if(CPU_ISSET(i,&mask))
-	allocatedCores.push_back(i);
+    for (int i = 0; i < CPU_SETSIZE; ++i)
+      if (CPU_ISSET(i, &mask))
+        allocatedCores.push_back(i);
   }
 
   /**
    * print the list of cores allocated to this process
    * (getAllocatedCores must be called first).
    */
-  void printAllocatedCores(ostream &s) const
-  {
-    //return; // ???
+  void printAllocatedCores(ostream &s) const {
+    // return; // ???
     size_t end;
 
-    for(size_t beg=0;beg<allocatedCores.size();beg=end)
-    {
-      end=beg+1;
-      while(end<allocatedCores.size() && 
-	    allocatedCores[end]==allocatedCores[end-1]+1)
-	++end;
+    for (size_t beg = 0; beg < allocatedCores.size(); beg = end) {
+      end = beg + 1;
+      while (end < allocatedCores.size() &&
+             allocatedCores[end] == allocatedCores[end - 1] + 1)
+        ++end;
 
-      if(beg!=0)
-	cout << ',';
+      if (beg != 0)
+        cout << ',';
 
-      if(end==beg+1)
-	s << allocatedCores[beg];
+      if (end == beg + 1)
+        s << allocatedCores[beg];
       else
-	s << allocatedCores[beg] << '-' << allocatedCores[end-1];
+        s << allocatedCores[beg] << '-' << allocatedCores[end - 1];
     }
   }
 
-
-  friend ostream &operator <<(ostream &out, const ProcessData &data);
+  friend ostream &operator<<(ostream &out, const ProcessData &data);
 };
 
-ostream &operator <<(ostream &out, const ProcessData &data)
-{
-  out << "[pid=" << data.pid ;
+ostream &operator<<(ostream &out, const ProcessData &data) {
+  out << "[pid=" << data.pid;
   if (data.tid)
     out << "/tid=" << data.tid;
 
-  out << "] ppid=" << data.ppid 
-      << " vsize=" << data.vsize/1024 
-      << " memory=" << data.getMemory() 
-      << " CPUtime=" << data.getOverallCPUTime()
-      << " cores=";
+  out << "] ppid=" << data.ppid << " vsize=" << data.vsize / 1024
+      << " memory=" << data.getMemory()
+      << " CPUtime=" << data.getOverallCPUTime() << " cores=";
 
   data.printAllocatedCores(out);
 
   out << endl;
 
   if (data.tid)
-    out << "/proc/" << data.pid << "/task/" 
-	<< data.tid << "/stat : " << data.statLine;
+    out << "/proc/" << data.pid << "/task/" << data.tid
+        << "/stat : " << data.statLine;
   else
     out << "/proc/" << data.pid << "/stat : " << data.statLine;
 
@@ -488,7 +403,7 @@ ostream &operator <<(ostream &out, const ProcessData &data)
   return out;
 }
 
-const unsigned long int ProcessData::clockTicksPerSecond=sysconf(_SC_CLK_TCK);
+const unsigned long int ProcessData::clockTicksPerSecond = sysconf(_SC_CLK_TCK);
 
 // Local Variables:
 // mode: C++

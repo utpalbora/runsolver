@@ -17,8 +17,6 @@
  * along with runsolver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 #ifndef _Observer_hh_
 #define _Observer_hh_
 
@@ -27,39 +25,32 @@
  * available on one of them
  *
  */
-class Observer
-{
+class Observer {
 private:
   vector<int> desc;
   fd_set readable;
+
 public:
   /**
    * add a file descriptor to watch
    */
-  void add(int fd)
-  {
-    desc.push_back(fd);
-  }
+  void add(int fd) { desc.push_back(fd); }
 
   /**
    * remove a file descriptor from the list of file descriptors to watch
    *
    * doit être appele avant de fermer la socket
    */
-  void remove(int fd)
-  {
-    vector<int>::iterator i=find(desc.begin(),desc.end(),fd);
-    if (i!=desc.end())
+  void remove(int fd) {
+    vector<int>::iterator i = find(desc.begin(), desc.end(), fd);
+    if (i != desc.end())
       desc.erase(i);
   }
 
   /**
    * tell if there is some file descriptor left to watch
    */
-  bool empty()
-  {
-    return desc.empty();
-  }
+  bool empty() { return desc.empty(); }
 
   /**
    * wait for data to become available on one of the file descriptor
@@ -67,23 +58,20 @@ public:
    *
    * this is a blocking method
    */
-  void waitForData()
-  {
-    int max=0;
+  void waitForData() {
+    int max = 0;
 
     FD_ZERO(&readable);
-    
-    for (int i=0;i<desc.size();++i)
-    {
-      FD_SET(desc[i],&readable);
-      if (max<=desc[i])
-	max=desc[i]+1;
+
+    for (int i = 0; i < desc.size(); ++i) {
+      FD_SET(desc[i], &readable);
+      if (max <= desc[i])
+        max = desc[i] + 1;
     }
 
-    int result=select(max,&readable,NULL,NULL,NULL);
-    if (result<0)
-    {
-      throw runtime_error("error select"+strerror(errno));
+    int result = select(max, &readable, NULL, NULL, NULL);
+    if (result < 0) {
+      throw runtime_error("error select" + strerror(errno));
     }
   }
 
@@ -92,12 +80,11 @@ public:
    *
    * returns true iff descriptor fd has data available
    */
-  bool hasData(int fd)
-  {
-    if (find(desc.begin(),desc.end(),fd)==desc.end())
+  bool hasData(int fd) {
+    if (find(desc.begin(), desc.end(), fd) == desc.end())
       return false;
 
-    return FD_ISSET(fd,&readable);
+    return FD_ISSET(fd, &readable);
   }
 };
 

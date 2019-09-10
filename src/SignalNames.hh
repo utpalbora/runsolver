@@ -17,8 +17,6 @@
  * along with runsolver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 #ifndef _SignalNames_hh_
 #define _SignalNames_hh_
 

@@ -17,8 +17,6 @@
  * along with runsolver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 #ifndef _ProcessList_hh_
 #define _ProcessList_hh_
 
@@ -31,36 +29,25 @@ using namespace std;
  *
  * ??? should be optimized !!!
  */
-class ProcessList
-{
+class ProcessList {
 private:
   set<pid_t> s;
+
 public:
   typedef set<pid_t>::iterator iterator;
 
-  inline void add(pid_t pid)
-  {
-    s.insert(pid);
-  }
+  inline void add(pid_t pid) { s.insert(pid); }
 
-  inline void remove(pid_t pid)
-  {
-    s.erase(pid);
-  }
+  inline void remove(pid_t pid) { s.erase(pid); }
 
-  inline bool contains(pid_t pid) const
-  {
-    return s.find(pid)!=s.end();
-  }
+  inline bool contains(pid_t pid) const { return s.find(pid) != s.end(); }
 
-  iterator begin() const {return s.begin();}
-  iterator end() const {return s.end();}
+  iterator begin() const { return s.begin(); }
+  iterator end() const { return s.end(); }
 };
-
 
 #endif
 
 // Local Variables:
 // mode: C++
 // End:
-

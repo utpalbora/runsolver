@@ -17,47 +17,33 @@
  * along with runsolver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 #ifndef _ExecutionSummary_hh_
 #define _ExecutionSummary_hh_
 
-struct ExecutionSummary
-{
+struct ExecutionSummary {
   int byteOrder; // used to detect byte ordering if needed (=0x01020304)
-  int version; // version number of this format
+  int version;   // version number of this format
   char runsolverVersion[16]; // version of runsolver
-  float wcTime; // wall-clock time in seconds
-  float cpuTime; // CPU time in seconds (userTime+systemTime)
-  float userTime; // user CPU time in seconds
-  float systemTime; // system CPU time in seconds
-  float cpuUsage; // cpuTime/wcTime (in percent)
-  long maxVM; // maximum virtual memory used in KiB
-  long maxMem; // maximum memory used in KiB
-  bool timeOut; // did the solver exceed the time limit?
-  bool memOut; // did the solver exceed the memory limit?
+  float wcTime;              // wall-clock time in seconds
+  float cpuTime;             // CPU time in seconds (userTime+systemTime)
+  float userTime;            // user CPU time in seconds
+  float systemTime;          // system CPU time in seconds
+  float cpuUsage;            // cpuTime/wcTime (in percent)
+  long maxVM;                // maximum virtual memory used in KiB
+  long maxMem;               // maximum memory used in KiB
+  bool timeOut;              // did the solver exceed the time limit?
+  bool memOut;               // did the solver exceed the memory limit?
 
-  
-  ExecutionSummary()
-  {
-    set();
-  }
+  ExecutionSummary() { set(); }
 
-  void set()
-  {
-    version=3;
-    byteOrder=0x01020304;
+  void set() {
+    version = 3;
+    byteOrder = 0x01020304;
   }
 
-  void reset()
-  {
-    byteOrder=0;
-  }
-  
-  bool ok() const
-  {
-    return byteOrder==0x01020304 && version==3;
-  }
+  void reset() { byteOrder = 0; }
+
+  bool ok() const { return byteOrder == 0x01020304 && version == 3; }
 };
 
 #endif

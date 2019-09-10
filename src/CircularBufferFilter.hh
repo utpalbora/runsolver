@@ -17,59 +17,50 @@
  * along with runsolver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 #ifndef _CircularBufferFilter_hh_
 #define _CircularBufferFilter_hh_
 
-#include <iostream>
 #include <cstring>
+#include <iostream>
 
 using namespace std;
 
-
-class AbstractFilter
-{
+class AbstractFilter {
 public:
-  virtual void write(const char *buffer, int len)=0;
+  virtual void write(const char *buffer, int len) = 0;
 
   /**
    * handle partial writes and EINTR
    */
-  void systemWrite(int fd, const char *buf, size_t len)
-  {
-    const char *p=buf;
+  void systemWrite(int fd, const char *buf, size_t len) {
+    const char *p = buf;
     int n;
-    
-    do
-    {
-      n=::write(fd,p,len);
-      if(n<0)
-      {
-	if(errno==EINTR)
-	  continue;
-	
-	perror("write failed: ");
-	break;
+
+    do {
+      n = ::write(fd, p, len);
+      if (n < 0) {
+        if (errno == EINTR)
+          continue;
+
+        perror("write failed: ");
+        break;
       }
-      
-      len-=n;
-      p+=n;
-    }
-    while(len);
+
+      len -= n;
+      p += n;
+    } while (len);
   }
 };
 
-class NullFilter : public AbstractFilter
-{
+class NullFilter : public AbstractFilter {
 private:
   int fd;
-public:
-  NullFilter(int fd): fd(fd) {}
 
-  virtual void write(const char *buffer, int len)
-  {
-    systemWrite(fd,buffer,len);
+public:
+  NullFilter(int fd) : fd(fd) {}
+
+  virtual void write(const char *buffer, int len) {
+    systemWrite(fd, buffer, len);
   }
 };
 
@@ -95,86 +86,70 @@ public:
      start at the beginning of a line. This may cause problem in some
      applications.
  */
-class CircularBufferFilter : public AbstractFilter
-{
+class CircularBufferFilter : public AbstractFilter {
 private:
   unsigned long long int total; // total number of bytes sent to this filter
-  unsigned long long int activateSize,maxSize,bufferSize;
+  unsigned long long int activateSize, maxSize, bufferSize;
 
-  char *data; // circular buffer
+  char *data;     // circular buffer
   unsigned int w; // position where to write in the circular buffer
 
   int fd; // file descriptor to write to
 
 public:
-  CircularBufferFilter()
-  {
-    data=NULL;
+  CircularBufferFilter() { data = NULL; }
+
+  CircularBufferFilter(int fd, unsigned long long int activateSize,
+                       unsigned long long int maxSize) {
+    data = NULL;
+    setup(fd, activateSize, maxSize);
   }
 
-  CircularBufferFilter(int fd, 
-		       unsigned long long int activateSize, 
-		       unsigned long long int maxSize)
-  {
-    data=NULL;
-    setup(fd,activateSize,maxSize);
+  void setup(int fd, unsigned long long int activateSize,
+             unsigned long long int maxSize) {
+    this->fd = fd;
+    this->activateSize = activateSize;
+    this->maxSize = maxSize;
+    bufferSize = maxSize - activateSize;
+    total = 0;
   }
 
-  void setup(int fd, 
-	     unsigned long long int activateSize, 
-	     unsigned long long int maxSize)
-  {
-    this->fd=fd;
-    this->activateSize=activateSize;
-    this->maxSize=maxSize;
-    bufferSize=maxSize-activateSize;
-    total=0;
-  }
+  ~CircularBufferFilter() { flush(); }
 
-  ~CircularBufferFilter()
-  {
-    flush();
-  }
+  virtual void write(const char *buffer, int len) {
+    total += len;
 
-  virtual void write(const char *buffer, int len)
-  {
-    total+=len;
+    if (total < activateSize)
+      systemWrite(fd, buffer, len);
+    else {
+      unsigned int n, r = 0;
 
-    if (total<activateSize)
-      systemWrite(fd,buffer,len);
-    else
-    {
-      unsigned int n,r=0;
-
-      if (!data)
-      {
-	data=new char[bufferSize];
-	w=0;
+      if (!data) {
+        data = new char[bufferSize];
+        w = 0;
       }
 
-      if (total-len<activateSize)
-      {
-	// the first activateSize bytes must be written directly
+      if (total - len < activateSize) {
+        // the first activateSize bytes must be written directly
 
-	n=activateSize-total+len;
-	systemWrite(fd,buffer,n);
-	len-=n;
-	buffer+=n;
+        n = activateSize - total + len;
+        systemWrite(fd, buffer, n);
+        len -= n;
+        buffer += n;
       }
 
-      do
-      {
-	n=len;
-	if (n>bufferSize-w)
-	  n=bufferSize-w;
+      do {
+        n = len;
+        if (n > bufferSize - w)
+          n = bufferSize - w;
 
-	memcpy(data+w,buffer+r,n);
-	len-=n;
-	r+=n;
-	w+=n;
-	if (w>=bufferSize)
-	  w=0;	
-      } while(len>0);
+        memcpy(data + w, buffer + r, n);
+        len -= n;
+        r += n;
+        w += n;
+        if (w >= bufferSize)
+          w = 0;
+      } while (len > 0);
     }
   }
 
@@ -184,30 +159,28 @@ public:
    * remember that the destructor is not called if we are an auto
    * object (local variable) and if we call exit()
    */
-  void flush()
-  {
+  void flush() {
     if (!data)
       return;
 
     char msg[512];
 
-    if (total<=maxSize)
-      systemWrite(fd,data,total-activateSize);
-    else
-    {
-      snprintf(msg,sizeof(msg),
-	       "\n"
-	       "###########################################################\n"
-	       "# A total of %llu bytes were output by the program.\n"
-	       "# This exceeds the hard limit that is enforced.\n"
-	       "# Only the %llu first bytes are saved in this file before\n"
-	       "# this point and only the %llu last bytes are saved after\n"
-	       "# this point. A total of %llu bytes are lost.\n"
-	       "###########################################################\n",
-	       total,activateSize,bufferSize,total-maxSize);
-      systemWrite(fd,msg,strlen(msg));
-      systemWrite(fd,data+w,bufferSize-w);
-      systemWrite(fd,data,w);
+    if (total <= maxSize)
+      systemWrite(fd, data, total - activateSize);
+    else {
+      snprintf(msg, sizeof(msg),
+               "\n"
+               "###########################################################\n"
+               "# A total of %llu bytes were output by the program.\n"
+               "# This exceeds the hard limit that is enforced.\n"
+               "# Only the %llu first bytes are saved in this file before\n"
+               "# this point and only the %llu last bytes are saved after\n"
+               "# this point. A total of %llu bytes are lost.\n"
+               "###########################################################\n",
+               total, activateSize, bufferSize, total - maxSize);
+      systemWrite(fd, msg, strlen(msg));
+      systemWrite(fd, data + w, bufferSize - w);
+      systemWrite(fd, data, w);
     }
   }
 };

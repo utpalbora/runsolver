@@ -17,101 +17,86 @@
  * along with runsolver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 #ifndef _ProcessHistory_hh_
 #define _ProcessHistory_hh_
 
-#include <iostream>
 #include "ProcessTree.hh"
+#include <iostream>
 
 using namespace std;
 
 /**
  * maintains a history of process trees
  */
-class ProcessHistory
-{
+class ProcessHistory {
 private:
   int nbcell;
   vector<int> nbitem;
   vector<ProcessTree *> history;
 
 public:
-  ProcessHistory(int n)
-  {
-    nbcell=n;
+  ProcessHistory(int n) {
+    nbcell = n;
     nbitem.resize(nbcell);
-    history.resize(2*nbcell);
-    for(int i=0;i<nbcell;++i)
-      nbitem[i]=0;
+    history.resize(2 * nbcell);
+    for (int i = 0; i < nbcell; ++i)
+      nbitem[i] = 0;
   }
 
-  ~ProcessHistory()
-  {
+  ~ProcessHistory() {
     // delete every process tree we have
-    for(int cell=0;cell<nbcell && nbitem[cell]>0;++cell)
-      for(int i=0;i<nbitem[cell];++i)
-	delete history[2*cell+i];
+    for (int cell = 0; cell < nbcell && nbitem[cell] > 0; ++cell)
+      for (int i = 0; i < nbitem[cell]; ++i)
+        delete history[2 * cell + i];
   }
 
-  void push(ProcessTree *elem)
-  {
-    int cell=0;
-    ProcessTree * tmp;
+  void push(ProcessTree *elem) {
+    int cell = 0;
+    ProcessTree *tmp;
     bool move;
 
-    do
-    {
-      if (nbitem[cell]<2)
-      {
-	history[2*cell+nbitem[cell]++]=elem;
-	move=false;
-      }
-      else
-      {
-	nbitem[cell]=0;
+    do {
+      if (nbitem[cell] < 2) {
+        history[2 * cell + nbitem[cell]++] = elem;
+        move = false;
+      } else {
+        nbitem[cell] = 0;
 
-	tmp=history[2*cell];
-	drop(history[2*cell+1]);
+        tmp = history[2 * cell];
+        drop(history[2 * cell + 1]);
 
-	history[2*cell+nbitem[cell]++]=elem;
-	elem=tmp;
-	
-	move=true;
-	++cell;
+        history[2 * cell + nbitem[cell]++] = elem;
+        elem = tmp;
+
+        move = true;
+        ++cell;
       }
-    }
-    while(move && cell<nbcell);
+    } while (move && cell < nbcell);
 
     if (move)
       drop(elem);
 
 #ifdef debug
-    for(int cell=0;cell<nbcell && nbitem[cell]>0;++cell)
-    {
-      for(int i=0;i<nbitem[cell];++i)
-	cout << history[2*cell+i] << ' ';
+    for (int cell = 0; cell < nbcell && nbitem[cell] > 0; ++cell) {
+      for (int i = 0; i < nbitem[cell]; ++i)
+        cout << history[2 * cell + i] << ' ';
       cout << '|';
     }
     cout << endl;
 #endif
   }
 
-  void dumpHistory(ostream &s, float elapsedLimit)
-  {
-    for(int cell=nbcell-1;cell>=0;--cell)
-    {
-      if (nbitem[cell]==0 ||
-	  history[2*cell]->getElapsedTime()<=elapsedLimit)
-	continue;
+  void dumpHistory(ostream &s, float elapsedLimit) {
+    for (int cell = nbcell - 1; cell >= 0; --cell) {
+      if (nbitem[cell] == 0 ||
+          history[2 * cell]->getElapsedTime() <= elapsedLimit)
+        continue;
 
-      history[2*cell]->dumpProcessTree(s);
-      history[2*cell]->dumpCPUTimeAndVSize(s);
+      history[2 * cell]->dumpProcessTree(s);
+      history[2 * cell]->dumpCPUTimeAndVSize(s);
     }
 
-    if (nbitem[0]==2)
-    {
+    if (nbitem[0] == 2) {
       // also dump the most recent
       history[1]->dumpProcessTree(s);
       history[1]->dumpCPUTimeAndVSize(s);
@@ -119,10 +104,7 @@ public:
   }
 
 protected:
-  void drop(ProcessTree *elem)
-  {
-    delete elem;
-  }
+  void drop(ProcessTree *elem) { delete elem; }
 };
 
 // Local Variables:

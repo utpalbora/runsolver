@@ -17,67 +17,37 @@
  * along with runsolver.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <string>
 
 #include "SignalNames.hh"
 
-const char *signalNames[]={
-  "???",
-  "SIGHUP",         
-  "SIGINT",        
-  "SIGQUIT",        
-  "SIGILL",         
-  "SIGTRAP",
-  "SIGABRT",         
-  "SIGBUS",          
-  "SIGFPE",          
-  "SIGKILL",         
-  "SIGUSR1",         
-  "SIGSEGV",         
-  "SIGUSR2",         
-  "SIGPIPE",         
-  "SIGALRM",         
-  "SIGTERM",         
-  "SIGSTKFLT",       
-  "SIGCHLD",         
-  "SIGCONT",         
-  "SIGSTOP",         
-  "SIGTSTP",         
-  "SIGTTIN",         
-  "SIGTTOU",         
-  "SIGURG",          
-  "SIGXCPU",         
-  "SIGXFSZ",         
-  "SIGVTALRM",       
-  "SIGPROF",         
-  "SIGWINCH",        
-  "SIGIO",           
-  "SIGPWR",          
-  "SIGSYS"};
+const char *signalNames[] = {
+    "???",     "SIGHUP",  "SIGINT",    "SIGQUIT", "SIGILL",    "SIGTRAP",
+    "SIGABRT", "SIGBUS",  "SIGFPE",    "SIGKILL", "SIGUSR1",   "SIGSEGV",
+    "SIGUSR2", "SIGPIPE", "SIGALRM",   "SIGTERM", "SIGSTKFLT", "SIGCHLD",
+    "SIGCONT", "SIGSTOP", "SIGTSTP",   "SIGTTIN", "SIGTTOU",   "SIGURG",
+    "SIGXCPU", "SIGXFSZ", "SIGVTALRM", "SIGPROF", "SIGWINCH",  "SIGIO",
+    "SIGPWR",  "SIGSYS"};
 
-
-const char *getSignalName(int sig)
-{
-  if (sig>0 && sig<=static_cast<int>(sizeof(signalNames)/sizeof(char *)))
+const char *getSignalName(int sig) {
+  if (sig > 0 && sig <= static_cast<int>(sizeof(signalNames) / sizeof(char *)))
     return signalNames[sig];
   else
     return "???";
 }
 
-int getSignalNum(const char *name)
-{
-  std::string uc=name,ucsig;
+int getSignalNum(const char *name) {
+  std::string uc = name, ucsig;
 
-  for(char &c: uc)
-    c=toupper(c);
+  for (char &c : uc)
+    c = toupper(c);
 
-  ucsig="SIG"+uc;
+  ucsig = "SIG" + uc;
 
-  int nbSig=sizeof(signalNames)/sizeof(char *);
+  int nbSig = sizeof(signalNames) / sizeof(char *);
 
-  for(int i=0;i<nbSig;++i)
-    if(signalNames[i]==uc || signalNames[i]==ucsig)
+  for (int i = 0; i < nbSig; ++i)
+    if (signalNames[i] == uc || signalNames[i] == ucsig)
       return i;
 
   return -1;
