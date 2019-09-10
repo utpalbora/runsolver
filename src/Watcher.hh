@@ -425,6 +425,12 @@ public:
         var << "# MAXVM: maximum virtual memory used in KiB\n"
             << "MAXVM=" << execSummary.maxVM << endl;
 
+        var << "# MAXMM: maximum memory used in KiB\n"
+            << "MAXMM=" << execSummary.maxMem << endl;
+
+        var << "# MAXRSS: maximum Resident Segment Size in KiB\n"
+            << "MAXRSS=" << r.ru_maxrss << endl;
+
         var << "# TIMEOUT: did the solver exceed the time limit?\n"
             << "TIMEOUT=" << boolalpha << execSummary.timeOut << endl;
 
