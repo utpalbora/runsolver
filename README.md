@@ -7,7 +7,7 @@ Tool to customize system limit and timeout while running benchmarks.
 ## Compile
 
 cd src  
-`make -j \`nproc\``  
+``make -j `nproc```  
 
 ## Useage
 
