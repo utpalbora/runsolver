@@ -395,7 +395,8 @@ public:
     execSummary.maxVM = maxVSize;
     execSummary.timeOut = (limitCPUTime && solverCPUTime > limitCPUTime) ||
                           (limitWallClockTime && (wcTime > limitWallClockTime));
-    execSummary.memOut = limitVSize && maxVSize > limitVSize;
+    execSummary.memOut = (limitVSize && maxVSize > limitVSize) ||
+                         (limitMemory && maxMemory > limitMemory);
     execSummary.maxMem = maxMemory;
 
     if (varOutputFilename) {
@@ -436,6 +437,9 @@ public:
 
         var << "# MEMOUT: did the solver exceed the memory limit?\n"
             << "MEMOUT=" << boolalpha << execSummary.memOut << endl;
+
+        var << "# EXITSTATUS: Exit status of the solver\n"
+            << "EXITSTATUS=" << childstatus << endl;
 
         if (!var.good())
           cout << "failed to save the main statistics in text format\n";
