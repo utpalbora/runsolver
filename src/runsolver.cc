@@ -1120,7 +1120,7 @@ int main(int argc, char **argv) {
   try {
     ios_base::sync_with_stdio();
 
-    while ((optc = getopt_long(argc, argv, "+o:w:v:C:W:R:V:M:S:O:d:h", longopts,
+    while ((optc = getopt_long(argc, argv, "+o:i:w:v:C:W:R:V:M:S:O:d:h", longopts,
                                NULL)) != EOF) {
       switch (optc) {
       case 'o':
